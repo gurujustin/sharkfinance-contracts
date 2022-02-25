@@ -603,12 +603,12 @@ contract SharkGenesisRewardPool {
     // The time when SHARK mining ends.
     uint256 public poolEndTime;
 
-    uint256 public sharkPerSecond = 0.5787 ether; // 50000 SHARK / (24h * 60min * 60s)
-    uint256 public runningTime = 24 hours; // 24 hours
-    uint256 public constant TOTAL_REWARDS = 50000 ether;
+    uint256 public sharkPerSecond = 0.154321 ether; // 40000 SHARK / (48h * 60min * 60s)
+    uint256 public runningTime = 48 hours; // 48 hours
+    uint256 public constant TOTAL_REWARDS = 40000 ether;
 
     uint256 public depositFeeBP = 150; // 1.5%
-    address public feeAddress; // fee address
+    address public devFund; // fee address
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -638,8 +638,8 @@ contract SharkGenesisRewardPool {
         }
     }
 
-    function setFeeAddress (address _feeAddress) public onlyOperator {
-        feeAddress = _feeAddress;
+    function setDevFund (address _devFund) public onlyOperator {
+        devFund = _devFund;
     }
     
     // Add a new token to the pool. Can only be called by the owner.
@@ -771,7 +771,7 @@ contract SharkGenesisRewardPool {
             pool.token.safeTransferFrom(_sender, address(this), _amount);
             if(depositFeeBP > 0) {
                 uint256 depositFee = _amount.mul(depositFeeBP).div(10000);
-                pool.token.safeTransfer(feeAddress, depositFee);
+                pool.token.safeTransfer(devFund, depositFee);
                 user.amount = user.amount.add(_amount).sub(depositFee);
             } else {
                 user.amount = user.amount.add(_amount);

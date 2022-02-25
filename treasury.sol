@@ -942,6 +942,9 @@ contract Treasury is ContractGuard {
     uint256 public premiumThreshold;
     uint256 public premiumPercent;
     uint256 public mintingFactorForPayingDebt; // print extra SHARK during debt phase
+    
+    address public daoFund;
+    uint256 public daoFundSharedPercent;
 
     address public devFund;
     uint256 public devFundSharedPercent;
@@ -954,6 +957,7 @@ contract Treasury is ContractGuard {
     event BoughApexs(address indexed from, uint256 sharkAmount, uint256 bondAmount);
     event TreasuryFunded(uint256 timestamp, uint256 seigniorage);
     event MasonryFunded(uint256 timestamp, uint256 seigniorage);
+    event DaoFundFunded(uint256 timestamp, uint256 seigniorage);
     event DevFundFunded(uint256 timestamp, uint256 seigniorage);
 
     /* =================== Modifier =================== */
@@ -1200,11 +1204,17 @@ contract Treasury is ContractGuard {
     }
 
     function setExtraFunds(
+        address _daoFund,
+        uint256 _daoFundSharedPercent,
         address _devFund,
         uint256 _devFundSharedPercent
     ) external onlyOperator {
+        require(_daoFund != address(0), "zero");
+        require(_daoFundSharedPercent <= 3000, "out of range"); // <= 30%
         require(_devFund != address(0), "zero");
         require(_devFundSharedPercent <= 1000, "out of range"); // <= 10%
+        daoFund = _daoFund;
+        daoFundSharedPercent = _daoFundSharedPercent;
         devFund = _devFund;
         devFundSharedPercent = _devFundSharedPercent;
     }
@@ -1312,6 +1322,13 @@ contract Treasury is ContractGuard {
     function _sendToMasonry(uint256 _amount) internal {
         IBasisAsset(shark).mint(address(this), _amount);
 
+        uint256 _daoFundSharedAmount = 0;
+        if (daoFundSharedPercent > 0) {
+            _daoFundSharedAmount = _amount.mul(daoFundSharedPercent).div(10000);
+            IERC20(shark).transfer(daoFund, _daoFundSharedAmount);
+            emit DaoFundFunded(now, _daoFundSharedAmount);
+        }
+
         uint256 _devFundSharedAmount = 0;
         if (devFundSharedPercent > 0) {
             _devFundSharedAmount = _amount.mul(devFundSharedPercent).div(10000);
@@ -1319,7 +1336,7 @@ contract Treasury is ContractGuard {
             emit DevFundFunded(now, _devFundSharedAmount);
         }
 
-        _amount = _amount.sub(_devFundSharedAmount);
+        _amount = _amount.sub(_daoFundSharedAmount).sub(_devFundSharedAmount);
 
         IERC20(shark).safeApprove(masonry, 0);
         IERC20(shark).safeApprove(masonry, _amount);

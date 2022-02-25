@@ -783,7 +783,7 @@ contract Fins is ERC20Burnable, Operator {
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 65000 ether;
     uint256 public constant DEV_FUND_POOL_ALLOCATION = 4999 ether;
 
-    uint256 public constant VESTING_DURATION = 60 days;
+    uint256 public constant VESTING_DURATION = 180 days;
     uint256 public startTime;
     uint256 public endTime;
 
@@ -829,7 +829,7 @@ contract Fins is ERC20Burnable, Operator {
      * @dev Claim pending rewards to dev fund
      */
     function claimRewards() external {
-        _pending = unclaimedDevFund();
+        uint256 _pending = unclaimedDevFund();
         if (_pending > 0 && devFund != address(0)) {
             _mint(devFund, _pending);
             devFundLastClaimed = block.timestamp;
